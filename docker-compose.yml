@@ -1,0 +1,86 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app # For live reloading during development
+    env_file:
+      - ./backend/.env # Load environment variables from .env file
+    networks:
+      - documentor_ai
+    depends_on: # Make backend wait for DB
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app # For live reloading during development
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - documentor_ai
+    environment:
+      # - CHOKIDAR_USEPOLLING=true # For older Next.js/Webpack versions
+      - WATCHPACK_POLLING=true # For newer Next.js/Webpack versions (try both or start with this)
+    # depends_on:
+    #   - backend
+
+  db: # Add PostgreSQL with pgvector later
+    image: pgvector/pgvector:pg15 # Uses PostgreSQL 15 with pgvector
+    ports:
+      - "5433:5432" # Map to different host port if 5432 is in use
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: documentor_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - documentor_ai
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d documentor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+
+    volumes:
+      - ollama_models:/root/.ollama # Persist downloaded models
+    networks:
+      - documentor_ai
+
+    environment:
+      - OLLAMA_NUM_GPU=0
+      - OLLAMA_DEBUG=true
+
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1 # or "all"
+    #           capabilities: [gpu]
+    tty: true # Keeps the container running, similar to ollama serve
+    restart: unless-stopped
+
+volumes: # Define named volumes for data persistence
+  postgres_data:
+  ollama_models:
+
+networks:
+  documentor_ai:
+    name: documentor_ai_dev
+    driver: bridge
+    attachable: true
