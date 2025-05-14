@@ -1,3 +1,4 @@
+# ********************* Production Dockerfile ********************  
 FROM node:18-alpine
 
 WORKDIR /app
@@ -7,8 +8,11 @@ RUN npm install
 
 COPY . .
 
-# RUN npm run build
+# Set build-time env var for API if needed (Vercel handles runtime via its UI)
+# ARG NEXT_PUBLIC_API_BASE_URL 
+# ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
+RUN npm run build
 
 EXPOSE 3000
-
-CMD [ "npm", "run", "dev" ]
+CMD ["npm", "start"] # Runs `next start`
