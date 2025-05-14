@@ -187,7 +187,7 @@ export const askQuestionStream = (
     eventSource.close();
   });
 
-  // return eventSource; // Return so it can be closed
+  return eventSource; // Return so it can be closed
 };
 
 // Keep the non-streaming version for upload or other calls
