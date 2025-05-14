@@ -310,6 +310,7 @@ export function QueryInterface({
       documentId,
       (payload: StreamTokenPayload) => {
         // onToken
+        console.log("UI ON_TOKEN", payload.token);
         accumulatedText += payload.token;
         setChatHistory((prev) =>
           prev.map((msg) =>
@@ -334,7 +335,9 @@ export function QueryInterface({
         // onStreamEnd
         setChatHistory((prev) =>
           prev.map((msg) =>
-            msg.id === assistantMessageId ? { ...msg, isLoading: false } : msg
+            msg.id === assistantMessageId
+              ? { ...msg, text: accumulatedText, isLoading: false }
+              : msg
           )
         );
         toast.info(message || "Stream finished.");
@@ -347,7 +350,11 @@ export function QueryInterface({
         setChatHistory((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, text: `Error: ${payload.detail}`, isLoading: false }
+              ? {
+                  ...msg,
+                  text: `Error: ${payload.detail || "An error occurred."}`,
+                  isLoading: false,
+                }
               : msg
           )
         );
@@ -358,6 +365,7 @@ export function QueryInterface({
         console.info("SSE Connection Opened");
         // onOpen (optional)
         // logger.info("SSE Connection Opened"); // Use a frontend logger if you have one
+        setIsGlobalLoading(false);
       }
     );
   };
@@ -373,8 +381,9 @@ export function QueryInterface({
 
   // Helper to check if the last assistant message is still loading
   const isAssistantResponding = () => {
-    const lastMessage = chatHistory[chatHistory.length - 1];
-    return lastMessage?.type === "assistant" && lastMessage.isLoading;
+    // const lastMessage = chatHistory[chatHistory.length - 1];
+    // return lastMessage?.type === "assistant" && lastMessage.isLoading;
+    return chatHistory.some((msg) => msg.type === "assistant" && msg.isLoading);
   };
 
   return (

@@ -142,6 +142,7 @@ export const askQuestionStream = (
 
   eventSource.addEventListener("token", (event) => {
     const data = JSON.parse(event.data) as StreamTokenPayload;
+    console.log("STREAM API TOKEN RECEIVED:", data.token); // Add this
     onToken(data);
   });
 
