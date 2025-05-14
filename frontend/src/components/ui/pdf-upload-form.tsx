@@ -16,7 +16,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { uploadDocument, DocumentRead } from "../../lib/api";
+import { uploadDocument, DocumentRead } from "@/lib/api";
 
 interface PdfUploadFormProps {
   onUploadSuccess: (document: DocumentRead) => void;

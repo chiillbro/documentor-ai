@@ -14,11 +14,10 @@ import {
   StreamErrorPayload,
   StreamSourcesPayload,
   StreamTokenPayload,
-} from "../../lib/api"; // DocumentRead no longer needed here
+} from "@/lib/api"; // DocumentRead no longer needed here
 import { toast } from "sonner";
 import { MessageSquare, User, Bot, Zap, RefreshCw } from "lucide-react";
-// import { cn } from "@/lib/utils";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown"; // For rendering markdown from LLM
 import remarkGfm from "remark-gfm"; // For GitHub Flavored Markdown (tables, etc.)
 
