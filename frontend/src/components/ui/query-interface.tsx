@@ -33,6 +33,7 @@ interface ChatMessage {
   text: string;
   sourceChunks?: string[] | null;
   isLoading?: boolean; // For assistant's placeholder while loading
+  isStreaming?: boolean; // Indicates tokens are actively arriving for this message
 }
 
 // export function QueryInterface({
@@ -262,8 +263,12 @@ export function QueryInterface({
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      const scrollViewport = scrollAreaRef.current
-        .children[1] as HTMLDivElement; // This is a bit hacky, depends on ScrollArea internals
+      // const scrollViewport = scrollAreaRef.current
+      //   .children[1] as HTMLDivElement; // This is a bit hacky, depends on ScrollArea internals
+      const scrollViewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+
       if (scrollViewport) {
         scrollViewport.scrollTop = scrollViewport.scrollHeight;
       }
@@ -298,6 +303,7 @@ export function QueryInterface({
       type: "assistant",
       text: "", // Start with empty text
       isLoading: true,
+      isStreaming: false, // Not yet actively receiving tokens
     };
 
     setChatHistory((prev) => [...prev, userMessage, initialAssistantMessage]);
@@ -315,7 +321,12 @@ export function QueryInterface({
         setChatHistory((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, text: accumulatedText, isLoading: true }
+              ? {
+                  ...msg,
+                  text: accumulatedText,
+                  isLoading: true,
+                  isStreaming: true,
+                }
               : msg
           )
         );
@@ -336,7 +347,12 @@ export function QueryInterface({
         setChatHistory((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, text: accumulatedText, isLoading: false }
+              ? {
+                  ...msg,
+                  text: accumulatedText,
+                  isLoading: false,
+                  isStreaming: false,
+                }
               : msg
           )
         );
@@ -354,6 +370,7 @@ export function QueryInterface({
                   ...msg,
                   text: `Error: ${payload.detail || "An error occurred."}`,
                   isLoading: false,
+                  isStreaming: false,
                 }
               : msg
           )
@@ -366,6 +383,14 @@ export function QueryInterface({
         // onOpen (optional)
         // logger.info("SSE Connection Opened"); // Use a frontend logger if you have one
         setIsGlobalLoading(false);
+        // Mark the initial assistant message as no longer "pristine loading" but "streaming"
+        setChatHistory((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, isLoading: true, isStreaming: true } // Still loading, but actively streaming
+              : msg
+          )
+        );
       }
     );
   };
@@ -380,10 +405,12 @@ export function QueryInterface({
   }, []);
 
   // Helper to check if the last assistant message is still loading
-  const isAssistantResponding = () => {
+  const isAnyAssistantMessageStreaming = () => {
     // const lastMessage = chatHistory[chatHistory.length - 1];
     // return lastMessage?.type === "assistant" && lastMessage.isLoading;
-    return chatHistory.some((msg) => msg.type === "assistant" && msg.isLoading);
+    return chatHistory.some(
+      (msg) => msg.type === "assistant" && msg.isStreaming
+    );
   };
 
   return (
@@ -431,13 +458,22 @@ export function QueryInterface({
                 )}
               >
                 <CardContent className="p-0">
-                  {message.isLoading ? (
+                  {/* Show loading skeleton only if it's an assistant message, isLoading is true, AND no text has arrived yet */}
+                  {/* {message.isLoading ? (
                     <div className="space-y-1.5 py-1">
                       {" "}
-                      {/* Adjusted pulsing animation */}
                       <div className="h-2.5 bg-foreground/10 rounded-full w-32 animate-pulse"></div>
                       <div className="h-2.5 bg-foreground/10 rounded-full w-48 animate-pulse delay-75"></div>
                       <div className="h-2.5 bg-foreground/10 rounded-full w-40 animate-pulse delay-150"></div>
+                    </div>
+                  ) : ( */}
+                  {message.type === "assistant" &&
+                  message.isLoading &&
+                  !message.isStreaming &&
+                  !message.text ? (
+                    <div className="space-y-1.5 py-1">
+                      <div className="h-2.5 bg-foreground/10 rounded-full w-24 animate-pulse"></div>
+                      <div className="h-2.5 bg-foreground/10 rounded-full w-32 animate-pulse delay-75"></div>
                     </div>
                   ) : (
                     <ReactMarkdown
@@ -454,6 +490,13 @@ export function QueryInterface({
                       {message.text}
                     </ReactMarkdown>
                   )}
+
+                  {/* Blinking cursor effect if isStreaming and isLoading */}
+                  {message.type === "assistant" &&
+                    message.isStreaming &&
+                    message.isLoading && (
+                      <span className="animate-pulse">▋</span>
+                    )}
                   {message.type === "assistant" &&
                     !message.isLoading &&
                     message.sourceChunks &&

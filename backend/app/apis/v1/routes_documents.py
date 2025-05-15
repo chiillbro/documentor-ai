@@ -398,7 +398,8 @@ async def query_document_stream_route(
                 token_data = {"token": content_piece}
                 full_answer_for_sources += content_piece
                 yield f"event: token\ndata: {json.dumps(token_data)}\n\n"
-                await asyncio.sleep(0.01) # Small delay for flushing
+                # await asyncio.sleep(0.01) # Small delay for flushing
+                await asyncio.sleep(0)
 
             # Retrieve sources after the main answer stream
             # This part still uses a synchronous PGVector initialization for simplicity
