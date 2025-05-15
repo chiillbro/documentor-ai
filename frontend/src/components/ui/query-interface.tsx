@@ -548,21 +548,21 @@ export function QueryInterface({
               if (
                 e.key === "Enter" &&
                 !e.shiftKey &&
-                !isAssistantResponding()
+                !isAnyAssistantMessageStreaming()
               ) {
                 e.preventDefault();
                 handleSubmitQuery();
               }
             }}
-            disabled={isAssistantResponding()}
+            disabled={isAnyAssistantMessageStreaming()}
           />
           <Button
             type="submit"
             size="icon"
             className="h-10 w-10 flex-shrink-0 rounded-md shadow-sm"
-            disabled={isAssistantResponding() || !query.trim()}
+            disabled={isAnyAssistantMessageStreaming() || !query.trim()}
           >
-            {isAssistantResponding() ? (
+            {isAnyAssistantMessageStreaming() ? (
               <RefreshCw className="h-5 w-5 animate-spin" />
             ) : (
               <Zap className="h-5 w-5" />
